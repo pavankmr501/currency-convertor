@@ -1,4 +1,4 @@
-name = "currency-converter-api"
+name = "linkedin-currency-converter"
 main = "src/index.ts"
 compatibility_date = "2024-05-24"
 

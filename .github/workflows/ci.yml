@@ -1,7 +1,9 @@
-name: CI
+name: CI / CD
 
 on:
   pull_request:
+  push:
+    branches: [main]
 
 jobs:
   test:
@@ -14,5 +16,52 @@ jobs:
           node-version: 22
           cache: npm
 
-      - run: npm ci
+      - run: npm install
       - run: npm test
+
+  deploy:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      deployment-url: ${{ steps.deploy.outputs.deployment-url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm install
+
+      - id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+  smoke-test:
+    needs: deploy
+    runs-on: ubuntu-latest
+    env:
+      BASE_URL: ${{ needs.deploy.outputs.deployment-url }}
+    steps:
+      - name: GET / returns Hello World
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/")
+          BODY=$(curl -s "$BASE_URL/")
+          [ "$STATUS" = "200" ] || (echo "Expected 200, got $STATUS" && exit 1)
+          echo "$BODY" | grep -q "Hello World" || (echo "Body missing Hello World: $BODY" && exit 1)
+
+      - name: GET /convert returns a result
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/convert?amount=1&from=USD&to=EUR")
+          BODY=$(curl -s "$BASE_URL/convert?amount=1&from=USD&to=EUR")
+          [ "$STATUS" = "200" ] || (echo "Expected 200, got $STATUS" && exit 1)
+          echo "$BODY" | grep -q '"result"' || (echo "Body missing result field: $BODY" && exit 1)
+
+      - name: GET /convert with missing params returns 400
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/convert")
+          [ "$STATUS" = "400" ] || (echo "Expected 400, got $STATUS" && exit 1)
