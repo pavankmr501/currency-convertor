@@ -1,4 +1,4 @@
-import { getRate } from './currencies';
+import { getRate, getCurrencyCount } from './currencies';
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -59,7 +59,7 @@ function handleConvert(url: URL): Response {
     rate = 1 / csvRate;
   }
 
-  return jsonResponse({ from, to, amount, result, rate });
+  return jsonResponse({ from, to, amount, result, rate, totalCurrencies: getCurrencyCount() });
 }
 
 export default {
