@@ -8,12 +8,14 @@ describe('GET /convert — happy paths', () => {
   it('converts USD to CAD', async () => {
     const res = await SELF.fetch('http://example.com/convert?amount=100&from=USD&to=CAD');
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { from: string; to: string; amount: number; result: number; rate: number };
+    const body = (await res.json()) as { from: string; to: string; amount: number; result: number; rate: number; totalCurrencies: number };
     expect(body.from).toBe('USD');
     expect(body.to).toBe('CAD');
     expect(body.amount).toBe(100);
     expect(body.result).toBeCloseTo(139.3);
     expect(body.rate).toBeCloseTo(1.393);
+    expect(body.totalCurrencies).toBeGreaterThan(0);
+    expect(Number.isInteger(body.totalCurrencies)).toBe(true);
   });
 
   it('converts EUR to USD (inverse direction)', async () => {
@@ -39,6 +41,14 @@ describe('GET /convert — happy paths', () => {
     const body = (await res.json()) as { from: string; to: string };
     expect(body.from).toBe('USD');
     expect(body.to).toBe('JPY');
+  });
+
+  it('includes totalCurrencies as a positive integer greater than 100', async () => {
+    const res = await SELF.fetch('http://example.com/convert?amount=1&from=USD&to=EUR');
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { totalCurrencies: number };
+    expect(body.totalCurrencies).toBeGreaterThan(100);
+    expect(Number.isInteger(body.totalCurrencies)).toBe(true);
   });
 });
 

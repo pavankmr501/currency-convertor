@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getRate } from '../src/currencies';
+import { getCurrencyCount, getRate } from '../src/currencies';
 
 // Tests for the getRate() function in isolation.
 // Rates are sourced from the 2026-03-31 snapshot in the CSV.
@@ -32,5 +32,24 @@ describe('getRate', () => {
     // index.ts uppercases before calling getRate; the function itself is strict
     expect(getRate('usd')).toBeNull();
     expect(getRate('eur')).toBeNull();
+  });
+});
+
+describe('getCurrencyCount', () => {
+  it('returns a positive integer', () => {
+    expect(getCurrencyCount()).toBeGreaterThan(0);
+    expect(Number.isInteger(getCurrencyCount())).toBe(true);
+  });
+
+  it('includes USD in the count', () => {
+    expect(getCurrencyCount()).toBeGreaterThan(1);
+  });
+
+  it('returns a consistent value across multiple calls', () => {
+    expect(getCurrencyCount()).toBe(getCurrencyCount());
+  });
+
+  it('count exceeds 100 given the breadth of the CSV', () => {
+    expect(getCurrencyCount()).toBeGreaterThan(100);
   });
 });

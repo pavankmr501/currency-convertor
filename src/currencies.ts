@@ -201,3 +201,7 @@ export function getRate(isoCode: string): number | null {
   if (!description) return null;
   return getRates().get(description) ?? null;
 }
+
+export function getCurrencyCount(): number {
+  return getRates().size + 1; // +1 for USD (base currency, not in CSV)
+}
